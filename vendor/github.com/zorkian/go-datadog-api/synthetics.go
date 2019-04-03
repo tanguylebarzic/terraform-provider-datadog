@@ -42,7 +42,8 @@ type SyntheticsAssertion struct {
 	Type     *string `json:"type,omitempty"`
 	// sometimes target is string ( like "text/html; charset=UTF-8" for header content-type )
 	// and sometimes target is int ( like 1200 for responseTime, 200 for statusCode )
-	Target interface{} `json:"target,omitempty"`
+	// TODO: making it an interface{} doesn't work; it false back to string when serialized to JSON
+	Target int `json:"target,omitempty"`
 }
 
 type SyntheticsOptions struct {
