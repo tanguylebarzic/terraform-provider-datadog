@@ -38,19 +38,11 @@ var createSyntheticsTestStep = resource.TestStep{
 	Check: resource.ComposeTestCheckFunc(
 		testSyntheticsTestExists(),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "name", "name for synthetics test foo"),
-		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "type", "api"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.method", "GET"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.url", "https://www.datadoghq.com"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "locations.#", "2"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "locations.0", "aws:eu-central-1"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "locations.1", "aws:ap-northeast-1"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.#", "2"),
 		resource.TestCheckResourceAttr(
@@ -66,17 +58,25 @@ var createSyntheticsTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.1.target", "2000"),
 		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "locations.#", "2"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "locations.0", "aws:eu-central-1"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "locations.1", "aws:ap-northeast-1"),
+		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "options.tick_every", "60"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "message", "Notify @datadog.user"),
+			"datadog_synthetics_test.foo", "name", "name for synthetics test foo"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "set_live", "false"),
+			"datadog_synthetics_test.foo", "message", "Notify @datadog.user"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.#", "2"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.0", "foo:bar"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.1", "baz"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "set_live", "false"),
 	),
 }
 
@@ -119,17 +119,11 @@ var updateSyntheticsTestStep = resource.TestStep{
 	Check: resource.ComposeTestCheckFunc(
 		testSyntheticsTestExists(),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "name", "updated name"),
-		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "type", "api"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.method", "GET"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.url", "https://docs.datadoghq.com"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "locations.#", "1"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "locations.0", "aws:eu-central-1"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.#", "1"),
 		resource.TestCheckResourceAttr(
@@ -139,11 +133,15 @@ var updateSyntheticsTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.0.target", "500"),
 		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "locations.#", "1"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "locations.0", "aws:eu-central-1"),
+		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "options.tick_every", "900"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "message", "Notify @pagerduty"),
+			"datadog_synthetics_test.foo", "name", "updated name"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "set_live", "true"),
+			"datadog_synthetics_test.foo", "message", "Notify @pagerduty"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.#", "3"),
 		resource.TestCheckResourceAttr(
@@ -152,20 +150,19 @@ var updateSyntheticsTestStep = resource.TestStep{
 			"datadog_synthetics_test.foo", "tags.1", "foo"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.2", "env:test"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "set_live", "true"),
 	),
 }
 
 const updateSyntheticsTestConfig = `
 resource "datadog_synthetics_test" "foo" {
-  name = "updated name"
   type = "api"
 
   request {
 	  method = "GET"
 	  url = "https://docs.datadoghq.com"
   }
-
-  locations = [ "aws:eu-central-1" ]
 
   assertions = [
     {
@@ -175,13 +172,17 @@ resource "datadog_synthetics_test" "foo" {
   	}
   ]
 
+  locations = [ "aws:eu-central-1" ]
+
   options {
 	tick_every = 900
   }
 
+  name = "updated name"
   message = "Notify @pagerduty"
-  set_live = true
   tags = ["foo:bar", "foo", "env:test"]
+
+  set_live = true
 }
 `
 
@@ -199,8 +200,6 @@ func testSyntheticsTestExists() resource.TestCheckFunc {
 }
 
 func testSyntheticsTestIsDestroyed(s *terraform.State) error {
-	return nil
-
 	client := testAccProvider.Meta().(*datadog.Client)
 
 	for _, r := range s.RootModule().Resources {

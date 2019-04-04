@@ -1,6 +1,5 @@
-/**
-For more info about writing custom provider: shttps://www.terraform.io/docs/extend/writing-custom-providers.html
-**/
+// For more info about writing custom provider: shttps://www.terraform.io/docs/extend/writing-custom-providers.html
+
 package datadog
 
 import (
@@ -13,7 +12,8 @@ import (
 	datadog "github.com/zorkian/go-datadog-api"
 )
 
-var syntheticsTypes = []string{"api", "browser"}
+// TODO: Add support for browser tests
+var syntheticsTypes = []string{"api"}
 
 func resourceDatadogSyntheticsTest() *schema.Resource {
 	return &schema.Resource{
@@ -62,7 +62,7 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 			"set_live": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  false,
+				Default:  true,
 			},
 		},
 	}
@@ -103,8 +103,6 @@ func syntheticsTestOptions() *schema.Schema {
 }
 
 func resourceDatadogSyntheticsTestCreate(d *schema.ResourceData, meta interface{}) error {
-	println("Creating")
-
 	client := meta.(*datadog.Client)
 
 	syntheticsTest := newSyntheticsTestFromLocalState(d)
@@ -118,12 +116,14 @@ func resourceDatadogSyntheticsTestCreate(d *schema.ResourceData, meta interface{
 	// the resource is assumed to not be created, and no state is saved.
 	d.SetId(createdSyntheticsTest.GetPublicId())
 
+	// Call resume/pause webservice, because it is a dedicated endpoint apart from classical CRUD operations
+	updateSyntheticsTestLiveness(d, client)
+
 	// Return the read function to ensure the state is reflected in the terraform.state file
 	return resourceDatadogSyntheticsTestRead(d, meta)
 }
 
 func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{}) error {
-	println("Reading")
 	client := meta.(*datadog.Client)
 
 	syntheticsTest, err := client.GetSyntheticsCheck(d.Id())
@@ -142,7 +142,6 @@ func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{})
 
 func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{}) error {
 	// TODO: should we implement partial mode?
-	println("Updating")
 	client := meta.(*datadog.Client)
 
 	syntheticsTest := newSyntheticsTestFromLocalState(d)
@@ -151,13 +150,14 @@ func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{
 		return err
 	}
 
+	// Call resume/pause webservice, because it is a dedicated endpoint apart from classical CRUD operations
+	updateSyntheticsTestLiveness(d, client)
+
 	// Return the read function to ensure the state is reflected in the terraform.state file
 	return resourceDatadogSyntheticsTestRead(d, meta)
 }
 
 func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{}) error {
-	println("Deleting")
-	return nil
 	client := meta.(*datadog.Client)
 
 	if err := client.DeleteSyntheticsChecks([]string{d.Id()}); err != nil {
@@ -172,7 +172,6 @@ func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{
 // resourceDatadogSyntheticsTestExists is called to verify a resource still exists.
 // It is called prior to Read, and lowers the burden of Read to be able to assume the resource exists.
 func resourceDatadogSyntheticsTestExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	println("Exists?")
 	client := meta.(*datadog.Client)
 
 	if _, err := client.GetSyntheticsCheck(d.Id()); err != nil {
@@ -262,4 +261,12 @@ func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *data
 	d.Set("name", syntheticsTest.GetName())
 	d.Set("message", syntheticsTest.GetMessage())
 	d.Set("tags", syntheticsTest.Tags)
+}
+
+func updateSyntheticsTestLiveness(d *schema.ResourceData, client *datadog.Client) {
+	if d.Get("set_live").(bool) {
+		client.ResumeSyntheticsTest(d.Id())
+	} else {
+		client.PauseSyntheticsTest(d.Id())
+	}
 }
