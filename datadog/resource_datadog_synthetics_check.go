@@ -5,10 +5,12 @@ package datadog
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	datadog "github.com/zorkian/go-datadog-api"
-	"strconv"
 )
 
 var syntheticsTypes = []string{"api", "browser"}
@@ -20,23 +22,11 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 		Update: resourceDatadogSyntheticsTestUpdate,
 		Delete: resourceDatadogSyntheticsTestDelete,
 		Exists: resourceDatadogSyntheticsTestExists,
-		Importer: &schema.ResourceImporter{
-			State: resourceDatadogSyntheticsTestImport,
-		},
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice(syntheticsTypes, false),
-			},
-			"message": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
 			},
 			"request": syntheticsTestRequest(),
 			"assertions": {
@@ -55,15 +45,24 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 				},
 			},
 			"options": syntheticsTestOptions(),
-			"set_live": {
-				Type:     schema.TypeBool,
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"message": {
+				Type:     schema.TypeString,
 				Optional: true,
-				Default:  false,
+				Default:  "",
 			},
 			"tags": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			"set_live": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
 			},
 		},
 	}
@@ -103,7 +102,87 @@ func syntheticsTestOptions() *schema.Schema {
 	}
 }
 
-func buildSyntheticsTestStruct(d *schema.ResourceData) *datadog.SyntheticsTest {
+func resourceDatadogSyntheticsTestCreate(d *schema.ResourceData, meta interface{}) error {
+	println("Creating")
+
+	client := meta.(*datadog.Client)
+
+	syntheticsTest := newSyntheticsTestFromLocalState(d)
+	createdSyntheticsTest, err := client.CreateSyntheticsCheck(syntheticsTest)
+	if err != nil {
+		// Note that Id won't be set, so no state will be saved.
+		return fmt.Errorf("error creating synthetics test: %s", err.Error())
+	}
+
+	// If the Create callback returns with or without an error without an ID set using SetId,
+	// the resource is assumed to not be created, and no state is saved.
+	d.SetId(createdSyntheticsTest.GetPublicId())
+
+	// Return the read function to ensure the state is reflected in the terraform.state file
+	return resourceDatadogSyntheticsTestRead(d, meta)
+}
+
+func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{}) error {
+	println("Reading")
+	client := meta.(*datadog.Client)
+
+	syntheticsTest, err := client.GetSyntheticsCheck(d.Id())
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			// Delete the resource from the local state since it doesn't exist anymore in the actual state
+			d.SetId("")
+		}
+		return err
+	}
+
+	updateSyntheticsTestLocalState(d, syntheticsTest)
+
+	return nil
+}
+
+func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{}) error {
+	// TODO: should we implement partial mode?
+	println("Updating")
+	client := meta.(*datadog.Client)
+
+	syntheticsTest := newSyntheticsTestFromLocalState(d)
+	if _, err := client.UpdateSyntheticsCheck(d.Id(), syntheticsTest); err != nil {
+		// If the Update callback returns with or without an error, the full state is saved.
+		return err
+	}
+
+	// Return the read function to ensure the state is reflected in the terraform.state file
+	return resourceDatadogSyntheticsTestRead(d, meta)
+}
+
+func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{}) error {
+	println("Deleting")
+	return nil
+	client := meta.(*datadog.Client)
+
+	if err := client.DeleteSyntheticsChecks([]string{d.Id()}); err != nil {
+		// The resource is assumed to still exist, and all prior state is preserved.
+		return err
+	}
+
+	// The resource is assumed to be destroyed, and all state is removed.
+	return nil
+}
+
+// resourceDatadogSyntheticsTestExists is called to verify a resource still exists.
+// It is called prior to Read, and lowers the burden of Read to be able to assume the resource exists.
+func resourceDatadogSyntheticsTestExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
+	println("Exists?")
+	client := meta.(*datadog.Client)
+
+	if _, err := client.GetSyntheticsCheck(d.Id()); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.SyntheticsTest {
 	request := datadog.SyntheticsRequest{}
 	if attr, ok := d.GetOk("request.method"); ok {
 		request.SetMethod(attr.(string))
@@ -173,66 +252,14 @@ func buildSyntheticsTestStruct(d *schema.ResourceData) *datadog.SyntheticsTest {
 	return &syntheticsTest
 }
 
-func resourceDatadogSyntheticsTestCreate(d *schema.ResourceData, meta interface{}) error {
-	println("Creating")
-
-	client := meta.(*datadog.Client)
-
-	syntheticsTest := buildSyntheticsTestStruct(d)
-	createdSyntheticsTest, err := client.CreateSyntheticsCheck(syntheticsTest)
-	if err != nil {
-		// Note that Id won't be set, so no state will be saved.
-		return fmt.Errorf("error creating synthetics test: %s", err.Error())
-	}
-
-	// If the Create callback returns with or without an error without an ID set using SetId,
-	// the resource is assumed to not be created, and no state is saved.
-	d.SetId(createdSyntheticsTest.GetPublicId())
-
-	// Return the read function to ensure the state is reflected in the terraform.state file
-	return resourceDatadogSyntheticsTestRead(d, meta)
-}
-
-func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{}) error {
-	println("Reading")
-	return nil
-}
-
-func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{}) error {
-	println("Updating")
-
-	// Return the read function to ensure the state is reflected in the terraform.state file
-	return resourceDatadogSyntheticsTestRead(d, meta)
-}
-
-func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{}) error {
-	println("Deleting")
-	client := meta.(*datadog.Client)
-
-	if err := client.DeleteSyntheticsChecks([]string{d.Id()}); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// resourceDatadogSyntheticsTestExists is called to verify a resource still exists.
-// It is called prior to Read, and lowers the burden of Read to be able to assume the resource exists.
-func resourceDatadogSyntheticsTestExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	println("Exists?")
-	client := meta.(*datadog.Client)
-
-	if _, err := client.GetSyntheticsCheck(d.Id()); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func resourceDatadogSyntheticsTestImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	println("Synthetics test import")
-	if err := resourceDatadogSyntheticsTestRead(d, meta); err != nil {
-		return nil, err
-	}
-	return []*schema.ResourceData{d}, nil
+func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *datadog.SyntheticsTest) {
+	// Note: there is no need to update set_live since the source of truth is actually the value set in the terraform config file.
+	d.Set("type", syntheticsTest.GetType())
+	d.Set("request", syntheticsTest.GetConfig().Request)
+	d.Set("assertions", syntheticsTest.GetConfig().Assertions)
+	d.Set("locations", syntheticsTest.Locations)
+	d.Set("options", syntheticsTest.GetOptions())
+	d.Set("name", syntheticsTest.GetName())
+	d.Set("message", syntheticsTest.GetMessage())
+	d.Set("tags", syntheticsTest.Tags)
 }
