@@ -1,3 +1,6 @@
+/**
+For more info about writing custom provider: shttps://www.terraform.io/docs/extend/writing-custom-providers.html
+**/
 package datadog
 
 import (
@@ -178,12 +181,16 @@ func resourceDatadogSyntheticsTestCreate(d *schema.ResourceData, meta interface{
 	syntheticsTest := buildSyntheticsTestStruct(d)
 	createdSyntheticsTest, err := client.CreateSyntheticsCheck(syntheticsTest)
 	if err != nil {
+		// Note that Id won't be set, so no state will be saved.
 		return fmt.Errorf("error creating synthetics test: %s", err.Error())
 	}
 
+	// If the Create callback returns with or without an error without an ID set using SetId,
+	// the resource is assumed to not be created, and no state is saved.
 	d.SetId(createdSyntheticsTest.GetPublicId())
 
-	return nil
+	// Return the read function to ensure the state is reflected in the terraform.state file
+	return resourceDatadogSyntheticsTestRead(d, meta)
 }
 
 func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{}) error {
@@ -193,17 +200,33 @@ func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{})
 
 func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{}) error {
 	println("Updating")
-	return nil
+
+	// Return the read function to ensure the state is reflected in the terraform.state file
+	return resourceDatadogSyntheticsTestRead(d, meta)
 }
 
 func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{}) error {
 	println("Deleting")
+	client := meta.(*datadog.Client)
+
+	if err := client.DeleteSyntheticsChecks([]string{d.Id()}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+// resourceDatadogSyntheticsTestExists is called to verify a resource still exists.
+// It is called prior to Read, and lowers the burden of Read to be able to assume the resource exists.
 func resourceDatadogSyntheticsTestExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	println("Synthetics test exists?")
-	return b, nil
+	println("Exists?")
+	client := meta.(*datadog.Client)
+
+	if _, err := client.GetSyntheticsCheck(d.Id()); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func resourceDatadogSyntheticsTestImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
