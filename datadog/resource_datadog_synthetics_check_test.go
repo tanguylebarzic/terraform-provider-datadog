@@ -76,7 +76,7 @@ var createSyntheticsTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.1", "baz"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "set_live", "false"),
+			"datadog_synthetics_test.foo", "paused", "true"),
 	),
 }
 
@@ -110,7 +110,7 @@ resource "datadog_synthetics_test" "foo" {
   message = "Notify @datadog.user"
   tags = ["foo:bar", "baz"]
 
-  set_live = false
+  paused = true
 }
 `
 
@@ -151,7 +151,7 @@ var updateSyntheticsTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.2", "env:test"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "set_live", "true"),
+			"datadog_synthetics_test.foo", "paused", "false"),
 	),
 }
 
@@ -182,7 +182,7 @@ resource "datadog_synthetics_test" "foo" {
   message = "Notify @pagerduty"
   tags = ["foo:bar", "foo", "env:test"]
 
-  set_live = true
+  paused = false
 }
 `
 

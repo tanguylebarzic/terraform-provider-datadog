@@ -59,7 +59,7 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"set_live": {
+			"paused": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
@@ -252,7 +252,7 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 }
 
 func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *datadog.SyntheticsTest) {
-	// Note: there is no need to update set_live since the source of truth is actually the value set in the terraform config file.
+	// Note: there is no need to update `paused` since the source of truth is actually the value set in the terraform config file.
 	d.Set("type", syntheticsTest.GetType())
 	d.Set("request", syntheticsTest.GetConfig().Request)
 	d.Set("assertions", syntheticsTest.GetConfig().Assertions)
@@ -264,7 +264,7 @@ func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *data
 }
 
 func updateSyntheticsTestLiveness(d *schema.ResourceData, client *datadog.Client) {
-	if d.Get("set_live").(bool) {
+	if d.Get("paused").(bool) {
 		client.ResumeSyntheticsTest(d.Id())
 	} else {
 		client.PauseSyntheticsTest(d.Id())
