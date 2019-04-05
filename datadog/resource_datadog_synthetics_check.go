@@ -106,7 +106,7 @@ func resourceDatadogSyntheticsTestCreate(d *schema.ResourceData, meta interface{
 	client := meta.(*datadog.Client)
 
 	syntheticsTest := newSyntheticsTestFromLocalState(d)
-	createdSyntheticsTest, err := client.CreateSyntheticsCheck(syntheticsTest)
+	createdSyntheticsTest, err := client.CreateSyntheticsTest(syntheticsTest)
 	if err != nil {
 		// Note that Id won't be set, so no state will be saved.
 		return fmt.Errorf("error creating synthetics test: %s", err.Error())
@@ -126,7 +126,7 @@ func resourceDatadogSyntheticsTestCreate(d *schema.ResourceData, meta interface{
 func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*datadog.Client)
 
-	syntheticsTest, err := client.GetSyntheticsCheck(d.Id())
+	syntheticsTest, err := client.GetSyntheticsTest(d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
 			// Delete the resource from the local state since it doesn't exist anymore in the actual state
@@ -145,7 +145,7 @@ func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{
 	client := meta.(*datadog.Client)
 
 	syntheticsTest := newSyntheticsTestFromLocalState(d)
-	if _, err := client.UpdateSyntheticsCheck(d.Id(), syntheticsTest); err != nil {
+	if _, err := client.UpdateSyntheticsTest(d.Id(), syntheticsTest); err != nil {
 		// If the Update callback returns with or without an error, the full state is saved.
 		return err
 	}
@@ -160,7 +160,7 @@ func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{
 func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*datadog.Client)
 
-	if err := client.DeleteSyntheticsChecks([]string{d.Id()}); err != nil {
+	if err := client.DeleteSyntheticsTests([]string{d.Id()}); err != nil {
 		// The resource is assumed to still exist, and all prior state is preserved.
 		return err
 	}
@@ -174,7 +174,7 @@ func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{
 func resourceDatadogSyntheticsTestExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
 	client := meta.(*datadog.Client)
 
-	if _, err := client.GetSyntheticsCheck(d.Id()); err != nil {
+	if _, err := client.GetSyntheticsTest(d.Id()); err != nil {
 		return false, err
 	}
 

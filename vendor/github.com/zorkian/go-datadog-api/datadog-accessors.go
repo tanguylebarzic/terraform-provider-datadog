@@ -7608,37 +7608,6 @@ func (s *SyntheticsRequest) SetUrl(v string) {
 	s.Url = &v
 }
 
-// GetCheckStatus returns the CheckStatus field if non-nil, zero value otherwise.
-func (s *SyntheticsTest) GetCheckStatus() string {
-	if s == nil || s.CheckStatus == nil {
-		return ""
-	}
-	return *s.CheckStatus
-}
-
-// GetCheckStatusOk returns a tuple with the CheckStatus field if it's non-nil, zero value otherwise
-// and a boolean to check if the value has been set.
-func (s *SyntheticsTest) GetCheckStatusOk() (string, bool) {
-	if s == nil || s.CheckStatus == nil {
-		return "", false
-	}
-	return *s.CheckStatus, true
-}
-
-// HasCheckStatus returns a boolean if a field has been set.
-func (s *SyntheticsTest) HasCheckStatus() bool {
-	if s != nil && s.CheckStatus != nil {
-		return true
-	}
-
-	return false
-}
-
-// SetCheckStatus allocates a new s.CheckStatus and returns the pointer to it.
-func (s *SyntheticsTest) SetCheckStatus(v string) {
-	s.CheckStatus = &v
-}
-
 // GetConfig returns the Config field if non-nil, zero value otherwise.
 func (s *SyntheticsTest) GetConfig() SyntheticsConfig {
 	if s == nil || s.Config == nil {
@@ -7947,6 +7916,37 @@ func (s *SyntheticsTest) HasPublicId() bool {
 // SetPublicId allocates a new s.PublicId and returns the pointer to it.
 func (s *SyntheticsTest) SetPublicId(v string) {
 	s.PublicId = &v
+}
+
+// GetStatus returns the Status field if non-nil, zero value otherwise.
+func (s *SyntheticsTest) GetStatus() string {
+	if s == nil || s.Status == nil {
+		return ""
+	}
+	return *s.Status
+}
+
+// GetStatusOk returns a tuple with the Status field if it's non-nil, zero value otherwise
+// and a boolean to check if the value has been set.
+func (s *SyntheticsTest) GetStatusOk() (string, bool) {
+	if s == nil || s.Status == nil {
+		return "", false
+	}
+	return *s.Status, true
+}
+
+// HasStatus returns a boolean if a field has been set.
+func (s *SyntheticsTest) HasStatus() bool {
+	if s != nil && s.Status != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetStatus allocates a new s.Status and returns the pointer to it.
+func (s *SyntheticsTest) SetStatus(v string) {
+	s.Status = &v
 }
 
 // GetType returns the Type field if non-nil, zero value otherwise.

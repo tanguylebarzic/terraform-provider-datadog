@@ -191,7 +191,7 @@ func testSyntheticsTestExists() resource.TestCheckFunc {
 		client := testAccProvider.Meta().(*datadog.Client)
 
 		for _, r := range s.RootModule().Resources {
-			if _, err := client.GetSyntheticsCheck(r.Primary.ID); err != nil {
+			if _, err := client.GetSyntheticsTest(r.Primary.ID); err != nil {
 				return fmt.Errorf("Received an error retrieving synthetics test %s", err)
 			}
 		}
@@ -203,7 +203,7 @@ func testSyntheticsTestIsDestroyed(s *terraform.State) error {
 	client := testAccProvider.Meta().(*datadog.Client)
 
 	for _, r := range s.RootModule().Resources {
-		if _, err := client.GetSyntheticsCheck(r.Primary.ID); err != nil {
+		if _, err := client.GetSyntheticsTest(r.Primary.ID); err != nil {
 			if strings.Contains(err.Error(), "404 Not Found") {
 				continue
 			}
