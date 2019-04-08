@@ -44,19 +44,33 @@ var createSyntheticsTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.url", "https://www.datadoghq.com"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.#", "2"),
+			"datadog_synthetics_test.foo", "assertions.#", "4"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.0.type", "statusCode"),
+			"datadog_synthetics_test.foo", "assertions.0.type", "header"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.0.operator", "is"),
+			"datadog_synthetics_test.foo", "assertions.0.property", "content-type"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.0.target", "200"),
+			"datadog_synthetics_test.foo", "assertions.0.operator", "contains"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.1.type", "responseTime"),
+			"datadog_synthetics_test.foo", "assertions.0.target", "application/json"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.1.operator", "lessThan"),
+			"datadog_synthetics_test.foo", "assertions.1.type", "statusCode"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.1.target", "2000"),
+			"datadog_synthetics_test.foo", "assertions.1.operator", "is"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.1.target", "200"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.2.type", "responseTime"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.2.operator", "lessThan"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.2.target", "2000"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.3.type", "body"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.3.operator", "doesNotContain"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.3.target", "terraform"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "locations.#", "2"),
 		resource.TestCheckResourceAttr(
@@ -90,6 +104,12 @@ resource "datadog_synthetics_test" "foo" {
   }
   assertions = [
     {
+			type = "header"
+			property = "content-type"
+      operator = "contains"
+			target = "application/json"
+		},
+    {
       type = "statusCode"
       operator = "is"
       target = "200"
@@ -97,7 +117,12 @@ resource "datadog_synthetics_test" "foo" {
     {
       type = "responseTime"
       operator = "lessThan"
-      target = "2000"
+			target = "2000"
+		},
+    {
+      type = "body"
+      operator = "doesNotContain"
+      target = "terraform"
   	}
   ]
 

@@ -181,6 +181,15 @@ func resourceDatadogSyntheticsTestExists(d *schema.ResourceData, meta interface{
 	return true, nil
 }
 
+func isTargetOfTypeInt(assertionType string) bool {
+	for _, intTargetAssertionType := range []string{"responseTime", "statusCode"} {
+		if assertionType == intTargetAssertionType {
+			return true
+		}
+	}
+	return false
+}
+
 func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.SyntheticsTest {
 	request := datadog.SyntheticsRequest{}
 	if attr, ok := d.GetOk("request.method"); ok {
@@ -199,14 +208,21 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 				assertionType := v.(string)
 				assertion.Type = &assertionType
 			}
+			if v, ok := assertionMap["property"]; ok {
+				assertionProperty := v.(string)
+				assertion.Property = &assertionProperty
+			}
 			if v, ok := assertionMap["operator"]; ok {
 				assertionOperator := v.(string)
 				assertion.Operator = &assertionOperator
 			}
 			if v, ok := assertionMap["target"]; ok {
-				assertionTarget := v.(string)
-				t, _ := strconv.Atoi(assertionTarget)
-				assertion.Target = t
+				if isTargetOfTypeInt(*assertion.Type) {
+					assertionTargetInt, _ := strconv.Atoi(v.(string))
+					assertion.Target = assertionTargetInt
+				} else {
+					assertion.Target = v.(string)
+				}
 			}
 			assertions = append(assertions, assertion)
 		}
