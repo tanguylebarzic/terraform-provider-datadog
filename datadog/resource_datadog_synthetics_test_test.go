@@ -44,7 +44,7 @@ var createSyntheticsTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.url", "https://www.datadoghq.com"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.#", "4"),
+			"datadog_synthetics_test.foo", "assertions.#", "5"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.0.type", "header"),
 		resource.TestCheckResourceAttr(
@@ -71,6 +71,12 @@ var createSyntheticsTestStep = resource.TestStep{
 			"datadog_synthetics_test.foo", "assertions.3.operator", "doesNotContain"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.3.target", "terraform"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.4.type", "body"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.4.operator", "validates"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "assertions.4.target", "{ \"type\": \"object\" }"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "locations.#", "2"),
 		resource.TestCheckResourceAttr(
@@ -123,6 +129,11 @@ resource "datadog_synthetics_test" "foo" {
       type = "body"
       operator = "doesNotContain"
       target = "terraform"
+		},
+		{
+      type = "body"
+      operator = "validates"
+      target = "{ \"type\": \"object\" }"
   	}
   ]
 

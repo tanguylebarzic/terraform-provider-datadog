@@ -3,6 +3,7 @@
 package datadog
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -220,6 +221,8 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 				if isTargetOfTypeInt(*assertion.Type) {
 					assertionTargetInt, _ := strconv.Atoi(v.(string))
 					assertion.Target = assertionTargetInt
+				} else if *assertion.Operator == "validates" {
+					assertion.Target = json.RawMessage(v.(string))
 				} else {
 					assertion.Target = v.(string)
 				}
