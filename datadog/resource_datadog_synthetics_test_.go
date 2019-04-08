@@ -98,6 +98,14 @@ func syntheticsTestOptions() *schema.Schema {
 					Type:     schema.TypeInt,
 					Required: true,
 				},
+				"min_failure_duration": {
+					Type:     schema.TypeInt,
+					Optional: true,
+				},
+				"min_location_failed": {
+					Type:     schema.TypeInt,
+					Optional: true,
+				},
 			},
 		},
 	}
@@ -234,7 +242,7 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 	config := datadog.SyntheticsConfig{
 		Request:    &request,
 		Assertions: assertions,
-		Variables:  []interface{}{}, // TODO: what is it?
+		Variables:  []interface{}{},
 	}
 
 	options := datadog.SyntheticsOptions{}
@@ -242,6 +250,7 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 		tickEvery, _ := strconv.Atoi(attr.(string))
 		options.SetTickEvery(tickEvery)
 	}
+	// TODO: other options
 
 	syntheticsTest := datadog.SyntheticsTest{
 		Name:    datadog.String(d.Get("name").(string)),
