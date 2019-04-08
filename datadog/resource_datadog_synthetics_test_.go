@@ -30,6 +30,10 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 				ValidateFunc: validation.StringInSlice(syntheticsTypes, false),
 			},
 			"request": syntheticsTestRequest(),
+			"request_headers": {
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
 			"assertions": {
 				Type:     schema.TypeList,
 				Required: true,
@@ -82,6 +86,14 @@ func syntheticsTestRequest() *schema.Schema {
 				"url": {
 					Type:     schema.TypeString,
 					Required: true,
+				},
+				"body": {
+					Type:     schema.TypeString,
+					Optional: true,
+				},
+				"timeout": {
+					Type:     schema.TypeInt,
+					Optional: true,
 				},
 			},
 		},
@@ -206,6 +218,22 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 	}
 	if attr, ok := d.GetOk("request.url"); ok {
 		request.SetUrl(attr.(string))
+	}
+	if attr, ok := d.GetOk("request.body"); ok {
+		request.SetBody(attr.(string))
+	}
+	if attr, ok := d.GetOk("request.timeout"); ok {
+		timeoutInt, _ := strconv.Atoi(attr.(string))
+		request.SetTimeout(timeoutInt)
+	}
+	if attr, ok := d.GetOk("request_headers"); ok {
+		headers := attr.(map[string]interface{})
+		if len(headers) > 0 {
+			request.Headers = make(map[string]string)
+		}
+		for k, v := range headers {
+			request.Headers[k] = v.(string)
+		}
 	}
 
 	assertions := []datadog.SyntheticsAssertion{}

@@ -106,8 +106,15 @@ resource "datadog_synthetics_test" "foo" {
 
   request {
 	  method = "GET"
-	  url = "https://www.datadoghq.com"
-  }
+		url = "https://www.datadoghq.com"
+		body = "this is a body"
+		timeout = 30
+	}
+	request_headers {
+		"Accept" = "application/json"
+		"X-Datadog-Trace-ID" = "1234566789"
+	}
+
   assertions = [
     {
 			type = "header"
@@ -139,7 +146,9 @@ resource "datadog_synthetics_test" "foo" {
 
   locations = [ "aws:eu-central-1", "aws:ap-northeast-1" ]
   options {
-	tick_every = 60
+		tick_every = 60
+		min_failure_duration = 60
+		min_location_failed = 1
   }
 
   name = "name for synthetics test foo"
