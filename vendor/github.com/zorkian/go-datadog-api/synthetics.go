@@ -64,7 +64,7 @@ type SyntheticsDevice struct {
 	Id          *string `json:"id"`
 	Name        *string `json:"name"`
 	Height      *int    `json:"height"`
-	Width       *string `json:"width"`
+	Width       *int    `json:"width"`
 	IsLandscape *bool   `json:"isLandscape,omitempty"`
 	IsMobile    *bool   `json:"isMobile,omitempty"`
 	UserAgent   *string `json:"userAgent,omitempty"`

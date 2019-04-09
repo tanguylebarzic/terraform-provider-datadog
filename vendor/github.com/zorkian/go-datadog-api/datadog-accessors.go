@@ -7640,18 +7640,18 @@ func (s *SyntheticsDevice) SetUserAgent(v string) {
 }
 
 // GetWidth returns the Width field if non-nil, zero value otherwise.
-func (s *SyntheticsDevice) GetWidth() string {
+func (s *SyntheticsDevice) GetWidth() int {
 	if s == nil || s.Width == nil {
-		return ""
+		return 0
 	}
 	return *s.Width
 }
 
 // GetWidthOk returns a tuple with the Width field if it's non-nil, zero value otherwise
 // and a boolean to check if the value has been set.
-func (s *SyntheticsDevice) GetWidthOk() (string, bool) {
+func (s *SyntheticsDevice) GetWidthOk() (int, bool) {
 	if s == nil || s.Width == nil {
-		return "", false
+		return 0, false
 	}
 	return *s.Width, true
 }
@@ -7666,7 +7666,7 @@ func (s *SyntheticsDevice) HasWidth() bool {
 }
 
 // SetWidth allocates a new s.Width and returns the pointer to it.
-func (s *SyntheticsDevice) SetWidth(v string) {
+func (s *SyntheticsDevice) SetWidth(v int) {
 	s.Width = &v
 }
 

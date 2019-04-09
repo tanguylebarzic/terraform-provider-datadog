@@ -14,7 +14,7 @@ import (
 )
 
 // TODO: Add support for browser tests
-var syntheticsTypes = []string{"api"}
+var syntheticsTypes = []string{"api", "browser"}
 
 func resourceDatadogSyntheticsTest() *schema.Resource {
 	return &schema.Resource{
@@ -36,7 +36,14 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 			},
 			"assertions": {
 				Type:     schema.TypeList,
-				Required: true,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeMap,
+				},
+			},
+			"devices": {
+				Type:     schema.TypeList,
+				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeMap,
 				},
@@ -46,7 +53,6 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 				Required: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
-					// TODO: validation with regexp
 				},
 			},
 			"options": syntheticsTestOptions(),
@@ -67,7 +73,6 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 			"paused": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true,
 			},
 		},
 	}
@@ -278,7 +283,43 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 		tickEvery, _ := strconv.Atoi(attr.(string))
 		options.SetTickEvery(tickEvery)
 	}
-	// TODO: other options
+	if attr, ok := d.GetOk("options.min_failure_duration"); ok {
+		minFailureDuration, _ := strconv.Atoi(attr.(string))
+		options.SetMinFailureDuration(minFailureDuration)
+	}
+	if attr, ok := d.GetOk("options.min_location_failed"); ok {
+		minLocationFailed, _ := strconv.Atoi(attr.(string))
+		options.SetMinFailureDuration(minLocationFailed)
+	}
+	if attr, ok := d.GetOk("devices"); ok {
+		for _, attr := range attr.([]interface{}) {
+			device := datadog.SyntheticsDevice{}
+			deviceMap := attr.(map[string]interface{})
+			if v, ok := deviceMap["id"]; ok {
+				device.SetId(v.(string))
+			}
+			if v, ok := deviceMap["name"]; ok {
+				device.SetName(v.(string))
+			}
+			if v, ok := deviceMap["height"]; ok {
+				deviceHeight := v.(string)
+				deviceHeightInt, _ := strconv.Atoi(deviceHeight)
+				device.SetHeight(deviceHeightInt)
+			}
+			if v, ok := deviceMap["width"]; ok {
+				deviceWidth := v.(string)
+				deviceWidthInt, _ := strconv.Atoi(deviceWidth)
+				device.SetWidth(deviceWidthInt)
+			}
+			if v, ok := deviceMap["isMobile"]; ok {
+				device.SetIsMobile(v.(string) == "true")
+			}
+			if v, ok := deviceMap["isLandscape"]; ok {
+				device.SetIsLandscape(v.(string) == "true")
+			}
+			options.Devices = append(options.Devices, device)
+		}
+	}
 
 	syntheticsTest := datadog.SyntheticsTest{
 		Name:    datadog.String(d.Get("name").(string)),
@@ -320,9 +361,13 @@ func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *data
 }
 
 func updateSyntheticsTestLiveness(d *schema.ResourceData, client *datadog.Client) {
-	if d.Get("paused").(bool) {
-		client.ResumeSyntheticsTest(d.Id())
-	} else {
+	paused, ok := d.GetOk("paused")
+	if !ok {
+		return
+	}
+	if paused.(bool) {
 		client.PauseSyntheticsTest(d.Id())
+	} else {
+		client.ResumeSyntheticsTest(d.Id())
 	}
 }

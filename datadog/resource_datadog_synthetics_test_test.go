@@ -10,31 +10,42 @@ import (
 	"github.com/zorkian/go-datadog-api"
 )
 
-func TestAccDatadogSyntheticsTest_Basic(t *testing.T) {
+func TestAccDatadogSyntheticsAPITest_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testSyntheticsTestIsDestroyed,
 		Steps: []resource.TestStep{
-			createSyntheticsTestStep,
+			createSyntheticsAPITestStep,
 		},
 	})
 }
 
-func TestAccDatadogSyntheticsTest_Updated(t *testing.T) {
+func TestAccDatadogSyntheticsAPITest_Updated(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testSyntheticsTestIsDestroyed,
 		Steps: []resource.TestStep{
-			createSyntheticsTestStep,
-			updateSyntheticsTestStep,
+			createSyntheticsAPITestStep,
+			updateSyntheticsAPITestStep,
 		},
 	})
 }
 
-var createSyntheticsTestStep = resource.TestStep{
-	Config: createSyntheticsTestConfig,
+func TestAccDatadogSyntheticsBrowserTest_Basic(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testSyntheticsTestIsDestroyed,
+		Steps: []resource.TestStep{
+			createSyntheticsBrowserTestStep,
+		},
+	})
+}
+
+var createSyntheticsAPITestStep = resource.TestStep{
+	Config: createSyntheticsAPITestConfig,
 	Check: resource.ComposeTestCheckFunc(
 		testSyntheticsTestExists(),
 		resource.TestCheckResourceAttr(
@@ -100,7 +111,7 @@ var createSyntheticsTestStep = resource.TestStep{
 	),
 }
 
-const createSyntheticsTestConfig = `
+const createSyntheticsAPITestConfig = `
 resource "datadog_synthetics_test" "foo" {
   type = "api"
 
@@ -159,8 +170,8 @@ resource "datadog_synthetics_test" "foo" {
 }
 `
 
-var updateSyntheticsTestStep = resource.TestStep{
-	Config: updateSyntheticsTestConfig,
+var updateSyntheticsAPITestStep = resource.TestStep{
+	Config: updateSyntheticsAPITestConfig,
 	Check: resource.ComposeTestCheckFunc(
 		testSyntheticsTestExists(),
 		resource.TestCheckResourceAttr(
@@ -200,7 +211,7 @@ var updateSyntheticsTestStep = resource.TestStep{
 	),
 }
 
-const updateSyntheticsTestConfig = `
+const updateSyntheticsAPITestConfig = `
 resource "datadog_synthetics_test" "foo" {
   type = "api"
 
@@ -228,6 +239,113 @@ resource "datadog_synthetics_test" "foo" {
   tags = ["foo:bar", "foo", "env:test"]
 
   paused = false
+}
+`
+
+var createSyntheticsBrowserTestStep = resource.TestStep{
+	Config: createSyntheticsBrowserTestConfig,
+	Check: resource.ComposeTestCheckFunc(
+		testSyntheticsTestExists(),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "type", "browser"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "request.method", "GET"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "request.url", "https://www.datadoghq.com"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "request.body", "this is a body"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "request.timeout", "30"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "request_headers.%", "2"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "request_headers.Accept", "application/json"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "request_headers.X-Datadog-Trace-ID", "123456789"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.#", "2"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.0.id", "laptop_large"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.0.name", "Laptop Large"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.0.height", "1100"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.0.width", "1440"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.0.isMobile", "0"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.1.id", "mobile_small"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.1.name", "Mobile Small"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.1.height", "550"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.1.width", "320"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "devices.1.isMobile", "1"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "assertions.#", "0"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "locations.#", "2"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "locations.0", "aws:eu-central-1"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "locations.1", "aws:ap-northeast-1"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "options.tick_every", "300"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "name", "name for synthetics browser test bar"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "message", "Notify @datadog.user"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "tags.#", "2"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "tags.0", "foo:bar"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.bar", "tags.1", "baz"),
+	),
+}
+
+const createSyntheticsBrowserTestConfig = `
+resource "datadog_synthetics_test" "bar" {
+  type = "browser"
+
+  request {
+	  method = "GET"
+		url = "https://www.datadoghq.com"
+		body = "this is a body"
+		timeout = 30
+	}
+	request_headers {
+		"Accept" = "application/json"
+		"X-Datadog-Trace-ID" = "123456789"
+	}
+
+	devices = [
+		{
+			id = "laptop_large"
+			name = "Laptop Large"
+			height = 1100
+			width = 1440
+			isMobile = false
+		},
+		{
+			id = "mobile_small"
+			name = "Mobile Small"
+			height = 550
+			width = 320
+			isMobile = true
+		},
+	]
+  locations = [ "aws:eu-central-1", "aws:ap-northeast-1" ]
+  options {
+		tick_every = 300
+  }
+
+  name = "name for synthetics browser test bar"
+  message = "Notify @datadog.user"
+  tags = ["foo:bar", "baz"]
 }
 `
 
