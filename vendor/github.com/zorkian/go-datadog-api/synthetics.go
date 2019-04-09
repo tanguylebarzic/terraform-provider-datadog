@@ -6,20 +6,21 @@ import (
 
 // SyntheticsTest represents a synthetics test, either api or browser
 type SyntheticsTest struct {
-	PublicId   *string            `json:"public_id,omitempty"`
-	Name       *string            `json:"name,omitempty"`
-	Type       *string            `json:"type,omitempty"`
-	Tags       []string           `json:"tags"`
-	CreatedAt  *string            `json:"created_at,omitempty"`
-	ModifiedAt *string            `json:"modified_at,omitempty"`
-	DeletedAt  *string            `json:"deleted_at,omitempty"`
-	Config     *SyntheticsConfig  `json:"config,omitempty"`
-	Message    *string            `json:"message,omitempty"`
-	Options    *SyntheticsOptions `json:"options,omitempty"`
-	Locations  []string           `json:"locations,omitempty"`
-	CreatedBy  *SyntheticsUser    `json:"created_by,omitempty"`
-	ModifiedBy *SyntheticsUser    `json:"modified_by,omitempty"`
-	Status     *string            `json:"check_status,omitempty"`
+	PublicId      *string            `json:"public_id,omitempty"`
+	Name          *string            `json:"name,omitempty"`
+	Type          *string            `json:"type,omitempty"`
+	Tags          []string           `json:"tags"`
+	CreatedAt     *string            `json:"created_at,omitempty"`
+	ModifiedAt    *string            `json:"modified_at,omitempty"`
+	DeletedAt     *string            `json:"deleted_at,omitempty"`
+	Config        *SyntheticsConfig  `json:"config,omitempty"`
+	Message       *string            `json:"message,omitempty"`
+	Options       *SyntheticsOptions `json:"options,omitempty"`
+	Locations     []string           `json:"locations,omitempty"`
+	CreatedBy     *SyntheticsUser    `json:"created_by,omitempty"`
+	ModifiedBy    *SyntheticsUser    `json:"modified_by,omitempty"`
+	Status        *string            `json:"status,omitempty"`
+	MonitorStatus *string            `json:"monitor_status,omitempty"`
 }
 
 type SyntheticsConfig struct {
@@ -46,7 +47,10 @@ type SyntheticsAssertion struct {
 }
 
 type SyntheticsOptions struct {
-	TickEvery *int `json:"tick_every,omitempty"`
+	TickEvery          *int               `json:"tick_every"`
+	MinFailureDuration *int               `json:"min_failure_duration,omitempty"`
+	MinLocationFailed  *int               `json:"min_location_failed,omitempty"`
+	Devices            []SyntheticsDevice `json:"devices,omitempty"`
 }
 
 type SyntheticsUser struct {
@@ -56,8 +60,18 @@ type SyntheticsUser struct {
 	Handle *string `json:"handle,omitempty"`
 }
 
+type SyntheticsDevice struct {
+	Id          *string `json:"id"`
+	Name        *string `json:"name"`
+	Height      *int    `json:"height"`
+	Width       *string `json:"width"`
+	IsLandscape *bool   `json:"isLandscape,omitempty"`
+	IsMobile    *bool   `json:"isMobile,omitempty"`
+	UserAgent   *string `json:"userAgent,omitempty"`
+}
+
 type SyntheticsTestsList struct {
-	SyntheticsTests []SyntheticsTest `json:"checks,omitempty"`
+	SyntheticsTests []SyntheticsTest `json:"tests,omitempty"`
 }
 
 type ToggleStatus struct {
@@ -67,7 +81,7 @@ type ToggleStatus struct {
 // GetSyntheticsTests get all tests of type API
 func (client *Client) GetSyntheticsTests() ([]SyntheticsTest, error) {
 	var out SyntheticsTestsList
-	if err := client.doJsonRequest("GET", "/v0/synthetics/checks?type=api", nil, &out); err != nil {
+	if err := client.doJsonRequest("GET", "/v1/synthetics/tests?type=api", nil, &out); err != nil {
 		return nil, err
 	}
 	return out.SyntheticsTests, nil
@@ -76,7 +90,7 @@ func (client *Client) GetSyntheticsTests() ([]SyntheticsTest, error) {
 // GetSyntheticsTest get test by public id
 func (client *Client) GetSyntheticsTest(publicId string) (*SyntheticsTest, error) {
 	var out SyntheticsTest
-	if err := client.doJsonRequest("GET", "/v0/synthetics/checks/"+publicId, nil, &out); err != nil {
+	if err := client.doJsonRequest("GET", "/v1/synthetics/tests/"+publicId, nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -85,7 +99,7 @@ func (client *Client) GetSyntheticsTest(publicId string) (*SyntheticsTest, error
 // CreateSyntheticsTest creates a test
 func (client *Client) CreateSyntheticsTest(syntheticsTest *SyntheticsTest) (*SyntheticsTest, error) {
 	var out SyntheticsTest
-	if err := client.doJsonRequest("POST", "/v0/synthetics/checks", syntheticsTest, &out); err != nil {
+	if err := client.doJsonRequest("POST", "/v1/synthetics/tests", syntheticsTest, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -94,7 +108,7 @@ func (client *Client) CreateSyntheticsTest(syntheticsTest *SyntheticsTest) (*Syn
 // UpdateSyntheticsTest updates a test
 func (client *Client) UpdateSyntheticsTest(publicId string, syntheticsTest *SyntheticsTest) (*SyntheticsTest, error) {
 	var out SyntheticsTest
-	if err := client.doJsonRequest("PUT", fmt.Sprintf("/v0/synthetics/checks/%s", publicId), syntheticsTest, &out); err != nil {
+	if err := client.doJsonRequest("PUT", fmt.Sprintf("/v1/synthetics/tests/%s", publicId), syntheticsTest, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -104,7 +118,7 @@ func (client *Client) UpdateSyntheticsTest(publicId string, syntheticsTest *Synt
 func (client *Client) PauseSyntheticsTest(publicId string) (*bool, error) {
 	payload := ToggleStatus{NewStatus: String("paused")}
 	out := Bool(false)
-	if err := client.doJsonRequest("PUT", fmt.Sprintf("/v0/synthetics/checks/%s/status", publicId), &payload, &out); err != nil {
+	if err := client.doJsonRequest("PUT", fmt.Sprintf("/v1/synthetics/tests/%s/status", publicId), &payload, &out); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -114,7 +128,7 @@ func (client *Client) PauseSyntheticsTest(publicId string) (*bool, error) {
 func (client *Client) ResumeSyntheticsTest(publicId string) (*bool, error) {
 	payload := ToggleStatus{NewStatus: String("live")}
 	out := Bool(false)
-	if err := client.doJsonRequest("PUT", fmt.Sprintf("/v0/synthetics/checks/%s/status", publicId), &payload, &out); err != nil {
+	if err := client.doJsonRequest("PUT", fmt.Sprintf("/v1/synthetics/tests/%s/status", publicId), &payload, &out); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -122,15 +136,15 @@ func (client *Client) ResumeSyntheticsTest(publicId string) (*bool, error) {
 
 // string array of public_id
 type DeleteSyntheticsTestsPayload struct {
-	CheckIds []string `json:"check_ids,omitempty"`
+	PublicIds []string `json:"public_ids,omitempty"`
 }
 
 // DeleteSyntheticsTests deletes tests
 func (client *Client) DeleteSyntheticsTests(publicIds []string) error {
 	req := DeleteSyntheticsTestsPayload{
-		CheckIds: publicIds,
+		PublicIds: publicIds,
 	}
-	if err := client.doJsonRequest("POST", "/v0/synthetics/checks/delete", req, nil); err != nil {
+	if err := client.doJsonRequest("POST", "/v1/synthetics/tests/delete", req, nil); err != nil {
 		return err
 	}
 	return nil
