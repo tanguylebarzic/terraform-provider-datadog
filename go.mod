@@ -25,4 +25,4 @@ require (
 	google.golang.org/genproto v0.0.0-20181016170114-94acd270e44e // indirect
 )
 
-replace github.com/zorkian/go-datadog-api => github.com/DataDog/go-datadog-api v0.0.0-20190409090430-627e185509df
+replace github.com/zorkian/go-datadog-api => github.com/DataDog/go-datadog-api v0.0.0-20190409155204-5497235f061d
