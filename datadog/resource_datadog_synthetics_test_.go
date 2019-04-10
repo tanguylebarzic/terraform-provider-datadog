@@ -241,7 +241,11 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 		}
 	}
 
-	assertions := []datadog.SyntheticsAssertion{}
+	config := datadog.SyntheticsConfig{
+		Request:   &request,
+		Variables: []interface{}{},
+	}
+
 	if attr, ok := d.GetOk("assertions"); ok {
 		for _, attr := range attr.([]interface{}) {
 			assertion := datadog.SyntheticsAssertion{}
@@ -268,14 +272,8 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 					assertion.Target = v.(string)
 				}
 			}
-			assertions = append(assertions, assertion)
+			config.Assertions = append(config.Assertions, assertion)
 		}
-	}
-
-	config := datadog.SyntheticsConfig{
-		Request:    &request,
-		Assertions: assertions,
-		Variables:  []interface{}{},
 	}
 
 	options := datadog.SyntheticsOptions{}

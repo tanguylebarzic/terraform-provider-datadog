@@ -293,7 +293,7 @@ var createSyntheticsBrowserTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.bar", "locations.1", "aws:ap-northeast-1"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.bar", "options.tick_every", "300"),
+			"datadog_synthetics_test.bar", "options.tick_every", "900"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.bar", "name", "name for synthetics browser test bar"),
 		resource.TestCheckResourceAttr(
@@ -340,7 +340,7 @@ resource "datadog_synthetics_test" "bar" {
 	]
   locations = [ "aws:eu-central-1", "aws:ap-northeast-1" ]
   options {
-		tick_every = 300
+		tick_every = 900
   }
 
   name = "name for synthetics browser test bar"
