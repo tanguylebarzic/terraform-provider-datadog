@@ -457,10 +457,10 @@ func Test(t TestT, c TestCase) {
 	log.SetOutput(logWriter)
 
 	// We require verbose mode so that the user knows what is going on.
-	if !testTesting && !testing.Verbose() && !c.IsUnitTest {
-		t.Fatal("Acceptance tests must be run with the -v flag on tests")
-		return
-	}
+	// if !testTesting && !testing.Verbose() && !c.IsUnitTest {
+	// 	t.Fatal("Acceptance tests must be run with the -v flag on tests")
+	// 	return
+	// }
 
 	// Run the PreCheck if we have it
 	if c.PreCheck != nil {

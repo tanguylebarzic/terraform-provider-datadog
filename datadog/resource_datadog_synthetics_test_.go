@@ -22,7 +22,9 @@ func resourceDatadogSyntheticsTest() *schema.Resource {
 		Read:   resourceDatadogSyntheticsTestRead,
 		Update: resourceDatadogSyntheticsTestUpdate,
 		Delete: resourceDatadogSyntheticsTestDelete,
-		Exists: resourceDatadogSyntheticsTestExists,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"type": {
 				Type:         schema.TypeString,
@@ -99,6 +101,7 @@ func syntheticsTestRequest() *schema.Schema {
 				"timeout": {
 					Type:     schema.TypeInt,
 					Optional: true,
+					Default:  0,
 				},
 			},
 		},
@@ -193,18 +196,6 @@ func resourceDatadogSyntheticsTestDelete(d *schema.ResourceData, meta interface{
 
 	// The resource is assumed to be destroyed, and all state is removed.
 	return nil
-}
-
-// resourceDatadogSyntheticsTestExists is called to verify a resource still exists.
-// It is called prior to Read, and lowers the burden of Read to be able to assume the resource exists.
-func resourceDatadogSyntheticsTestExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	client := meta.(*datadog.Client)
-
-	if _, err := client.GetSyntheticsTest(d.Id()); err != nil {
-		return false, err
-	}
-
-	return true, nil
 }
 
 func isTargetOfTypeInt(assertionType string) bool {
@@ -349,13 +340,44 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *datadog.SyntheticsTest) {
 	// Note: there is no need to update `paused` since the source of truth is actually the value set in the terraform config file.
 	d.Set("type", syntheticsTest.GetType())
-	d.Set("request", syntheticsTest.GetConfig().Request)
-	d.Set("assertions", syntheticsTest.GetConfig().Assertions)
+
+	actualRequest := syntheticsTest.GetConfig().Request
+	localRequest := newLocalMap(map[string]interface{}{
+		"method":  actualRequest.GetMethod(),
+		"url":     actualRequest.GetUrl(),
+		"body":    actualRequest.GetBody(),
+		"timeout": actualRequest.GetTimeout(),
+	})
+	d.Set("request", localRequest)
+	d.Set("request_headers", actualRequest.Headers)
+
+	actualAssertions := syntheticsTest.GetConfig().Assertions
+	localAssertions := []map[string]string{}
+	for _, assertion := range actualAssertions {
+		localAssertion := newLocalMap(map[string]interface{}{
+			"type":     assertion.GetType(),
+			"property": assertion.GetProperty(),
+			"operator": assertion.GetOperator(),
+			"target":   assertion.Target,
+		})
+		localAssertions = append(localAssertions, localAssertion)
+	}
+	d.Set("assertions", localAssertions)
+
 	d.Set("locations", syntheticsTest.Locations)
-	d.Set("options", syntheticsTest.GetOptions())
+
+	actualOptions := syntheticsTest.GetOptions()
+	localOptions := newLocalMap(map[string]interface{}{
+		"tick_every":           actualOptions.GetTickEvery(),
+		"min_failure_duration": actualOptions.GetMinFailureDuration(),
+		"min_location_failed":  actualOptions.GetMinLocationFailed(),
+	})
+	d.Set("options", localOptions)
+
 	d.Set("name", syntheticsTest.GetName())
 	d.Set("message", syntheticsTest.GetMessage())
 	d.Set("tags", syntheticsTest.Tags)
+	d.Set("paused", *syntheticsTest.Status == "paused")
 }
 
 func updateSyntheticsTestLiveness(d *schema.ResourceData, client *datadog.Client) {
@@ -368,4 +390,26 @@ func updateSyntheticsTestLiveness(d *schema.ResourceData, client *datadog.Client
 	} else {
 		client.ResumeSyntheticsTest(d.Id())
 	}
+}
+
+func newLocalMap(actualMap map[string]interface{}) map[string]string {
+	localMap := make(map[string]string)
+	for k, i := range actualMap {
+		var valStr string
+		switch v := i.(type) {
+		case int:
+			valStr = strconv.Itoa(v)
+		case float64:
+			valStr = strconv.Itoa(int(v))
+		case string:
+			valStr = v
+		default:
+			// Ignore value
+			// TODO: manage target for JSON body assertions
+		}
+		if valStr != "" {
+			localMap[k] = valStr
+		}
+	}
+	return localMap
 }

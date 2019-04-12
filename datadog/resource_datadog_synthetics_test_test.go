@@ -10,6 +10,26 @@ import (
 	"github.com/zorkian/go-datadog-api"
 )
 
+func TestAccDatadogSyntheticsAPITest_importBasic(t *testing.T) {
+	resourceName := "datadog_synthetics_test.foo"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testSyntheticsTestIsDestroyed,
+		Steps: []resource.TestStep{
+			{
+				Config: createSyntheticsAPITestConfig,
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccDatadogSyntheticsAPITest_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -55,7 +75,7 @@ var createSyntheticsAPITestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.url", "https://www.datadoghq.com"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.#", "5"),
+			"datadog_synthetics_test.foo", "assertions.#", "4"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.0.type", "header"),
 		resource.TestCheckResourceAttr(
@@ -82,12 +102,6 @@ var createSyntheticsAPITestStep = resource.TestStep{
 			"datadog_synthetics_test.foo", "assertions.3.operator", "doesNotContain"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.3.target", "terraform"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.4.type", "body"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.4.operator", "validates"),
-		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "assertions.4.target", "{ \"type\": \"object\" }"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "locations.#", "2"),
 		resource.TestCheckResourceAttr(
@@ -147,19 +161,14 @@ resource "datadog_synthetics_test" "foo" {
       type = "body"
       operator = "doesNotContain"
       target = "terraform"
-		},
-		{
-      type = "body"
-      operator = "validates"
-      target = "{ \"type\": \"object\" }"
-  	}
+		}
   ]
 
   locations = [ "aws:eu-central-1", "aws:ap-northeast-1" ]
   options {
 		tick_every = 60
-		min_failure_duration = 60
-		min_location_failed = 1
+		min_failure_duration = 0 
+		min_location_failed = 0
   }
 
   name = "name for synthetics test foo"
@@ -180,6 +189,8 @@ var updateSyntheticsAPITestStep = resource.TestStep{
 			"datadog_synthetics_test.foo", "request.method", "GET"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "request.url", "https://docs.datadoghq.com"),
+		resource.TestCheckResourceAttr(
+			"datadog_synthetics_test.foo", "request.timeout", "60"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "assertions.#", "1"),
 		resource.TestCheckResourceAttr(
@@ -207,7 +218,7 @@ var updateSyntheticsAPITestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.foo", "tags.2", "env:test"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.foo", "paused", "false"),
+			"datadog_synthetics_test.foo", "paused", "true"),
 	),
 }
 
@@ -217,7 +228,8 @@ resource "datadog_synthetics_test" "foo" {
 
   request {
 	  method = "GET"
-	  url = "https://docs.datadoghq.com"
+		url = "https://docs.datadoghq.com"
+		timeout = 60
   }
 
   assertions = [
@@ -231,14 +243,16 @@ resource "datadog_synthetics_test" "foo" {
   locations = [ "aws:eu-central-1" ]
 
   options {
-	tick_every = 900
+		tick_every = 900
+		min_failure_duration = 0 
+		min_location_failed = 0
   }
 
   name = "updated name"
   message = "Notify @pagerduty"
   tags = ["foo:bar", "foo", "env:test"]
 
-  paused = false
+  paused = true
 }
 `
 
@@ -341,11 +355,15 @@ resource "datadog_synthetics_test" "bar" {
   locations = [ "aws:eu-central-1", "aws:ap-northeast-1" ]
   options {
 		tick_every = 900
+		min_failure_duration = 0
+		min_location_failed = 0
   }
 
   name = "name for synthetics browser test bar"
   message = "Notify @datadog.user"
-  tags = ["foo:bar", "baz"]
+	tags = ["foo:bar", "baz"]
+	
+	paused = true
 }
 `
 
