@@ -336,7 +336,6 @@ func newSyntheticsTestFromLocalState(d *schema.ResourceData) *datadog.Synthetics
 }
 
 func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *datadog.SyntheticsTest) {
-	// Note: there is no need to update `paused` since the source of truth is actually the value set in the terraform config file.
 	d.Set("type", syntheticsTest.GetType())
 
 	actualRequest := syntheticsTest.GetConfig().Request
