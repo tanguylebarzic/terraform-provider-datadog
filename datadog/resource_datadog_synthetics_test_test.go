@@ -11,8 +11,6 @@ import (
 )
 
 func TestAccDatadogSyntheticsAPITest_importBasic(t *testing.T) {
-	resourceName := "datadog_synthetics_test.foo"
-
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -22,7 +20,25 @@ func TestAccDatadogSyntheticsAPITest_importBasic(t *testing.T) {
 				Config: createSyntheticsAPITestConfig,
 			},
 			{
-				ResourceName:      resourceName,
+				ResourceName:      "datadog_synthetics_test.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccDatadogSyntheticsBrowserTest_importBasic(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testSyntheticsTestIsDestroyed,
+		Steps: []resource.TestStep{
+			{
+				Config: createSyntheticsBrowserTestConfig,
+			},
+			{
+				ResourceName:      "datadog_synthetics_test.bar",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -297,7 +313,7 @@ var createSyntheticsBrowserTestStep = resource.TestStep{
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.bar", "devices.1.width", "320"),
 		resource.TestCheckResourceAttr(
-			"datadog_synthetics_test.bar", "devices.1.isMobile", "1"),
+			"datadog_synthetics_test.bar", "devices.1.isMobile", "0"),
 		resource.TestCheckResourceAttr(
 			"datadog_synthetics_test.bar", "assertions.#", "0"),
 		resource.TestCheckResourceAttr(
@@ -349,7 +365,7 @@ resource "datadog_synthetics_test" "bar" {
 			name = "Mobile Small"
 			height = 550
 			width = 320
-			isMobile = true
+			isMobile = false
 		},
 	]
   locations = [ "aws:eu-central-1", "aws:ap-northeast-1" ]

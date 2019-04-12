@@ -13,7 +13,6 @@ import (
 	datadog "github.com/zorkian/go-datadog-api"
 )
 
-// TODO: Add support for browser tests
 var syntheticsTypes = []string{"api", "browser"}
 
 func resourceDatadogSyntheticsTest() *schema.Resource {
@@ -170,7 +169,6 @@ func resourceDatadogSyntheticsTestRead(d *schema.ResourceData, meta interface{})
 }
 
 func resourceDatadogSyntheticsTestUpdate(d *schema.ResourceData, meta interface{}) error {
-	// TODO: should we implement partial mode?
 	client := meta.(*datadog.Client)
 
 	syntheticsTest := newSyntheticsTestFromLocalState(d)
@@ -364,6 +362,20 @@ func updateSyntheticsTestLocalState(d *schema.ResourceData, syntheticsTest *data
 	}
 	d.Set("assertions", localAssertions)
 
+	actualDevices := syntheticsTest.GetOptions().Devices
+	localDevices := []map[string]string{}
+	for _, device := range actualDevices {
+		localDevice := newLocalMap(map[string]interface{}{
+			"id":       device.GetId(),
+			"name":     device.GetName(),
+			"height":   device.GetHeight(),
+			"width":    device.GetWidth(),
+			"isMobile": device.GetIsMobile(),
+		})
+		localDevices = append(localDevices, localDevice)
+	}
+	d.Set("devices", localDevices)
+
 	d.Set("locations", syntheticsTest.Locations)
 
 	actualOptions := syntheticsTest.GetOptions()
@@ -397,6 +409,12 @@ func newLocalMap(actualMap map[string]interface{}) map[string]string {
 	for k, i := range actualMap {
 		var valStr string
 		switch v := i.(type) {
+		case bool:
+			if v {
+				valStr = "1"
+			} else {
+				valStr = "0"
+			}
 		case int:
 			valStr = strconv.Itoa(v)
 		case float64:
